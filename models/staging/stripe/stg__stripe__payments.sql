@@ -2,7 +2,7 @@ SELECT
     orderid as order_id
     ,paymentmethod as payment_method
     ,status as payment_status
-    ,amount as payment_amount
+    ,amount/100 as payment_amount
     ,created
     ,_batched_at
 FROM {{ source('stripe', 'payment') }}

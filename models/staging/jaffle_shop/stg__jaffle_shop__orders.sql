@@ -4,4 +4,4 @@ select
     ,order_date
     ,status
     ,_etl_loaded_at
-from RAW.JAFFLE_SHOP.ORDERS
+from {{ source('jaffle_shop', 'orders') }}

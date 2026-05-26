@@ -6,7 +6,15 @@ models:
         description: Primary key for the customers table
         tests:
           - unique
-          - not_null       
+          - not_null 
+      - name: first_name
+        description: The first name of the customer
+        tests:
+          - not_null
+      - name: last_name
+        description: The last name of the customer
+        tests:
+          - not_null     
 
   - name: stg__jaffle_shop__orders
     description: One order per row

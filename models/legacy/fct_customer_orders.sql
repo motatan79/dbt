@@ -1,95 +1,33 @@
 -- Import CTEs
-with 
+with customers as (
 
-raw_customers as (
-
-  select * from {{ source('jaffle_shop', 'customers') }}
-
-),
-
-raw_orders as (
-
-  select * from {{ source('jaffle_shop', 'orders') }}
-
-),
-
-raw_payments as (
-
-  select * from {{ source('stripe', 'payment') }}
-
-),
-
--- Logical CTEs
-customers as (
-
-  select 
-    id as customer_id
-    ,first_name as givenname
-    ,last_name as surname
-    ,first_name || ' ' || last_name as full_name
-  from raw_customers
+  select * from {{ ref('stg__jaffle_shop__customers') }}
 
 ),
 
 orders as (
 
-  select 
-
-    id as order_id
-    ,user_id as customer_id
-    ,order_date
-    ,status as order_status
-    ,_etl_loaded_at
-    ,row_number() over (partition by user_id order by order_date, id)
-    as user_order_seq
-
-  from raw_orders
-),
-
-payments as (
-
-  select 
-    id as payment_id
-    ,orderid as order_id
-    ,paymentmethod as payment_method
-    ,status as payment_status
-    ,round(amount / 100.0, 2) as payment_amount
-    ,created as payment_created_at
-    ,_batched_at
-
-  from raw_payments
+  select * from {{ ref('int_orders') }}
 
 ),
 
--- Marts
 customer_order_history as (
     select
         customers.customer_id
         ,customers.surname
         ,customers.givenname
-        ,min(order_date) as first_order_date
-        ,min( 
-            case 
-                when orders.order_status not in ('returned', 'return_pending')
-                then order_date
-            end  
-        ) as first_non_returned_order_date
-        ,max(
-            case 
-                when orders.order_status not in ('returned', 'return_pending')
-                then order_date
-            end  
-        ) as most_recent_non_returned_order_date
-
+        ,min(orders.order_date) as first_order_date
+        ,min(orders.valid_order_date) as first_non_returned_order_date
+        ,max(orders.valid_order_date) as most_recent_non_returned_order_date
         ,coalesce(
             max(
-                user_order_seq),0
+                orders.user_order_seq),0
             ) as orders_count
 
         ,coalesce(
             count(
                 case 
-                    when orders.order_status != 'returned'
+                    when orders.valid_order_date is not null
                     then 1 
                 end
                 ), 0
@@ -97,22 +35,22 @@ customer_order_history as (
         
         ,sum(
             case 
-                when orders.order_status not in ('returned', 'return_pending')
-                then payments.payment_amount
+                when orders.valid_order_date is not null
+                then orders.order_value_dollars
                 else 0
             end
         ) as total_lifetime_value
 
         ,sum(
             case 
-                when orders.order_status not in ('returned', 'return_pending')
-                then payments.payment_amount
+                when orders.valid_order_date is not null
+                then orders.order_value_dollars
                 else 0
             end) /
             nullif(
                 count(
                     case 
-                        when orders.order_status not in ('returned', 'return_pending')
+                        when orders.valid_order_date is not null
                         then 1
                     end), 0)
              as avg_non_returned_order_value
@@ -120,9 +58,6 @@ customer_order_history as (
     
     from orders
     join customers on orders.customer_id = customers.customer_id
-    left outer join payments on orders.order_id = payments.order_id 
-    where orders.order_status not in ('pending') and payments.payment_status <> 'fail'
-    
     group by customers.customer_id, customers.full_name, customers.surname, customers.givenname
 ),
 -- Final CTE
@@ -135,9 +70,9 @@ final as (
         first_order_date,
         orders_count,
         total_lifetime_value,
-        payments.payment_amount as order_value_dollars,
+        orders.order_value_dollars,
         orders.order_status,
-        payments.payment_status
+        orders.payment_status
 
     from orders
 
@@ -146,10 +81,6 @@ final as (
 
     join customer_order_history 
     on customer_order_history.customer_id = orders.customer_id
-    
-    left outer join payments
-    on orders.order_id = payments.order_id 
-    where payments.payment_status <> 'fail'
 )
 
 -- Simple Select Statment

@@ -1,0 +1,26 @@
+functions:
+  - name: safe_divide      # required
+    description: My UDF that returns the result of dividing two numbers, with error handling for division by zero. # optional
+    arguments:                  # optional
+      - name: numerator          # required if arguments is specified
+        data_type: number       # required if arguments is specified
+        description: The number to be divided
+        default_value: "0"    # optional, available in Snowflake and Postgres
+      - name: denominator          # required if arguments is specified
+        data_type: number       # required if arguments is specified
+        description: The number by which to divide
+        default_value: "1"    # optional, available in Snowflake and Postgres
+    returns:                    # required
+      data_type: number        # required
+
+  - name: create_email      # required
+    description: My UDF that returns a string with the email address of a customer, based on their given name and id.
+    arguments:                  # optional
+      - name: first_name          # required if arguments is specified
+        data_type: string       # required if arguments is specified
+        description: The first name of the customer
+      - name: id          # required if arguments is specified
+        data_type: number(38,0)       # required if arguments is specified
+        description: The ID of the customer
+    returns:                    # required
+      data_type: varchar        # required

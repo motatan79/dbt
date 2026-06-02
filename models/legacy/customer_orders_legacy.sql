@@ -8,17 +8,17 @@ with paid_orders as (
         p.payment_finalized_date,
         c.first_name    as customer_first_name,
         c.last_name as customer_last_name
-    from {{ source('jaffle_shop', 'orders') }} as orders
+    from raw.jaffle_shop.orders as orders
     left join (
         select 
         orderid as order_id
         ,max(created) as payment_finalized_date
         ,sum(amount) / 100.0 as total_amount_paid
-from {{ source('stripe', 'payment') }}
+from raw.stripe.payment
 where status <> 'fail'
 group by 1
 ) p on orders.id = p.order_id
-left join {{ source('jaffle_shop', 'customers') }} c on orders.user_id = c.id ),
+left join raw.jaffle_shop.customers c on orders.user_id = c.id ),
 
 customer_orders 
     as (
@@ -26,21 +26,27 @@ customer_orders
         , min(order_date) as first_order_date
         , max(order_date) as most_recent_order_date
         , count(orders.id) as number_of_orders
-    from {{ source('jaffle_shop', 'customers') }} c 
-    left join {{ source('jaffle_shop', 'orders') }} as orders
+    from raw.jaffle_shop.customers c 
+    left join raw.jaffle_shop.orders as orders
     on orders.user_id = c.id 
     group by 1)
 
 select
-    p.*,
-    row_number() over (order by p.order_id) as transaction_seq,
-    row_number() over (partition by customer_id order by p.order_id) as customer_sales_seq,
-    case 
-        when c.first_order_date = p.order_placed_at
-        then 'new' else 'return' 
-        end as nvsr,
-    x.clv_bad as customer_lifetime_value,
-    c.first_order_date as fdos
+    p.order_id,
+    p.customer_id,
+    p.order_status,
+    --p.total_amount_paid,
+    --p.payment_finalized_date,
+    p.customer_first_name as givenname,
+    p.customer_last_name as surname,
+    --row_number() over (order by p.order_id) as order_count,
+    row_number() over (partition by customer_id order by p.order_id) as order_count,
+    -- case 
+    --     when c.first_order_date = p.order_placed_at
+    --     then 'new' else 'return' 
+    --     end as nvsr,
+    x.clv_bad as total_lifetime_value,
+    c.first_order_date as first_order_date
     from paid_orders p
     left join customer_orders as c using (customer_id)
     left outer join 

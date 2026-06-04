@@ -1,0 +1,10 @@
+groups:
+  - name: finance
+    owner:
+      email: firstname.lastname@mesh.com
+      slack: finance-data-team
+      github: finance-data-team
+  - name: product
+    owner:
+      email: product@mesh.com
+      github: product -data-team

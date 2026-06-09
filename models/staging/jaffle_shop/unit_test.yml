@@ -1,0 +1,23 @@
+unit_tests:
+  - name: test_order_date_clean_up
+    description: Test status case when logic
+    model: stg__jaffle_shop__orders
+    given:
+      - input: source('jaffle_shop', 'orders')
+        rows:
+          - {id: 1, status: returned, order_date: 2018-01-20}
+          - {id: 2, status: return_pending, order_date: 2018-01-22}
+          - {id: 3, status: completed, order_date:	2018-01-23}
+          - {id: 4, status: shipped, order_date:	2018-01-24}
+          - {id: 5, status: pending, order_date: 2018-01-26}
+          - {id: 6, status: placed, order_date: 2018-01-26}
+    expect:
+        rows:       
+          - {order_id: 1, valid_order_date: null}
+          - {order_id: 2, valid_order_date: null}
+          - {order_id: 3, valid_order_date:	2018-01-23}
+          - {order_id: 4, valid_order_date:	2018-01-24}
+          - {order_id: 5, valid_order_date: 2018-01-26}
+          - {order_id: 6, valid_order_date: 2018-01-26}
+
+        

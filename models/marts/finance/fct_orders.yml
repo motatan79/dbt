@@ -6,9 +6,11 @@ models:
         tests:
           - dbt_utils.expression_is_true:
               arguments: "<=5"
-              # Para añadir la configuración que no falle sino que informe un warning
               config:
-                severity: warn
+                # severity: warn # Para añadir la configuración que no falle sino que informe un warning
+                # where: "order_date = current_date" # Para añadir que sólo considere las ordenes de hoy
+                # limit: 5 # Para limitar el numero de registros a evaluar
+                store_failures: true # Para guardar los valores del test cada vez que falla
           - dbt_expectations.expect_column_values_to_be_between:
               arguments:
                 min_value: 0  # (Optional)

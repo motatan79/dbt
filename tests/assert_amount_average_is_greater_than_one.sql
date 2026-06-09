@@ -7,4 +7,4 @@
     GROUP BY 1
     HAVING average_amount < 1
 
-{ endtest }
+{% endtest %}

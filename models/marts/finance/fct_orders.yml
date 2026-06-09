@@ -1,0 +1,16 @@
+models:
+  - name: fct_orders
+    description: rounded dollars amount of order
+    columns:
+      - name: amount
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments: "<=5"
+              # Para añadir la configuración que no falle sino que informe un warning
+              config:
+                severity: warn
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0  # (Optional)
+                max_value: 100 # (Optional)
+                strictly: false 

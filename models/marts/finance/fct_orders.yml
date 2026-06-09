@@ -16,3 +16,15 @@ models:
                 min_value: 0  # (Optional)
                 max_value: 100 # (Optional)
                 strictly: false 
+exposures:
+  - name: jaffle_shop_weekly_metrics
+    label: Jaffle Shop Weekly Metrics
+    description: Weekly order Metrics for Jaffle Shop
+    depends_on:
+      - ref('fct_orders')
+    owner:
+      name: Moises
+      email: example@email.com
+    type: dashboard
+    maturity: high
+    url: htpps://dbtlabs
